@@ -65,7 +65,7 @@ task.spawn(function()
         local target = QuetRadarBoss()
         if target then
             print(">> Muc tieu: " .. target.Name)
-            repeat task.wait(0.5) until not target or not target.Parent or not target:FindFirstChild("Humanoid") or target.Humanoid.Health <= 0
+            repeat task.wait(1) until not target or not target.Parent or not target:FindFirstChild("Humanoid") or target.Humanoid.Health <= 0
             print(">> Boss chet, tim tiep...")
         else
             print(">> Map sach. Doi " .. delayHop .. "s roi Hop...")
