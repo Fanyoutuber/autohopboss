@@ -43,7 +43,7 @@ local function DoiServer()
     
     local success, response = pcall(function() return game:HttpGet(url) end)
     if not success then return end
-    
+
     local data = HttpService:JSONDecode(response)
     if data and data.data then
         local timThayServer = false
@@ -53,7 +53,7 @@ local function DoiServer()
             -- 1. Khác server đang đứng
             -- 2. Chưa từng nằm trong sổ đen (ServerDaThu)
             -- 3. Trừ hao an toàn: Phải trống ít nhất 2 slot (maxPlayers - 1)
-            if type(server) == "table" and server.id ~= jobId and not ServerDaThu[server.id] and server.playing < (server.maxPlayers - 1) then
+            if type(server) == "table" and server.id ~= jobId and not ServerDaThu[server.id] and server.playing >= 3 and server.playing < 6 then
                 
                 print(">> Radar chốt server mới: " .. server.playing .. "/" .. server.maxPlayers .. " người. Đang Teleport...")
                 
