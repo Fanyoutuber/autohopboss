@@ -38,8 +38,10 @@ print(">> Giai doan 3: Dang nap Module Teleport...")
 local function DoiServerSieuToc()
     local url = "https://games.roblox.com/v1/games/"..PId.."/servers/Public?sortOrder=Desc&limit=100"
     local success, res = pcall(function() return game:HttpGet(url) end)
-    if not success then return end 
-
+    if not success then 
+        print(">> [LỖI API] Roblox chặn truy cập vì spam. Đợi nhịp sau gọi lại...")
+        return 
+    end
     local data = HS:JSONDecode(res)
     if data and data.data then
         local danhSachNgon = {} 
