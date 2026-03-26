@@ -5,7 +5,7 @@ local HttpService = game:GetService("HttpService")
 -- 1. CẤU HÌNH CỐT LÕI (Chỗ duy nhất ông cần sửa tay)
 -- =========================================================
 -- Nhét tất cả tên Boss ông muốn săn vào đây. Ưu tiên con nào thì để lên đầu.
-local DanhSachBoss = {"StrongestShinobiBoss", "AizenBoss", "JinwooBoss", "JinwooBoss"}
+local DanhSachBoss = {"StrongestShinobiBoss", "AizenBoss", "YamatoBoss", "JinwooBoss"}
 local delayHop = 5 -- Mức an toàn chống bị Roblox ban IP
 
 -- =========================================================
