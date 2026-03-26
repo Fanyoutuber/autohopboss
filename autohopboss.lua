@@ -5,7 +5,7 @@ local HttpService = game:GetService("HttpService")
 -- 1. CẤU HÌNH CỐT LÕI (Chỗ duy nhất ông cần sửa tay)
 -- =========================================================
 -- Nhét tất cả tên Boss ông muốn săn vào đây. Ưu tiên con nào thì để lên đầu.
-local DanhSachBoss = {"StrongestShinobiBoss", "AizenBoss", "YamatoBoss", "JinwooBoss"}
+local DanhSachBoss = {"StrongestShinobiBoss", "AizenBoss", "JinwooBoss", "JinwooBoss"}
 local delayHop = 5 -- Mức an toàn chống bị Roblox ban IP
 
 -- =========================================================
@@ -27,26 +27,55 @@ local function QuetRadarBoss()
 end
 
 -- =========================================================
--- 3. MODULE NHẢY SERVER
+-- MODULE NHẢY SERVER (Bản vá lỗi GameFull)
 -- =========================================================
+local ServerDaThu = {} -- Sổ đen: Lưu ID các server đã đâm đầu vào
+local trangHienTai = "" -- Dùng để lật trang nếu 100 server đầu tiên đều nát
+
 local function DoiServer()
-    local placeId = game.PlaceId
-    local jobId = game.JobId
-    local url = "https://games.roblox.com/v1/games/" .. tostring(placeId) .. "/servers/Public?sortOrder=Desc&limit=100"
+    local placeId, jobId = game.PlaceId, game.JobId
     
-    -- pcall: Bọc lại để nếu mạng rớt, script không kéo sập luôn phần mềm Delta
+    -- Gắn thêm cursor để lật trang nếu cần
+    local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Desc&limit=100"
+    if trangHienTai ~= "" then
+        url = url .. "&cursor=" .. trangHienTai
+    end
+    
     local success, response = pcall(function() return game:HttpGet(url) end)
     if not success then return end
     
     local data = HttpService:JSONDecode(response)
     if data and data.data then
+        local timThayServer = false
+        
         for _, server in pairs(data.data) do
-            -- Lọc server: Phải khác phòng hiện tại và còn chỗ trống
-            if type(server) == "table" and server.id ~= jobId and server.playing < server.maxPlayers then
-                print(">> Radar chốt được Server mới. Đang chuẩn bị Teleport...")
+            -- LOGIC MỚI: 
+            -- 1. Khác server đang đứng
+            -- 2. Chưa từng nằm trong sổ đen (ServerDaThu)
+            -- 3. Trừ hao an toàn: Phải trống ít nhất 2 slot (maxPlayers - 1)
+            if type(server) == "table" and server.id ~= jobId and not ServerDaThu[server.id] and server.playing < (server.maxPlayers - 1) then
+                
+                print(">> Radar chốt server mới: " .. server.playing .. "/" .. server.maxPlayers .. " người. Đang Teleport...")
+                
+                -- Đưa ngay vào sổ đen để lần sau không đâm đầu lại
+                ServerDaThu[server.id] = true 
+                timThayServer = true
+                
                 TeleportService:TeleportToPlaceInstance(placeId, server.id, game.Players.LocalPlayer)
-                task.wait(10) -- Khóa mõm script, chờ game đẩy sang phòng kia
+                task.wait(10)
                 break
+            end
+        end
+        
+        -- Nếu quét sạch 100 server ở trang này mà không có cái nào xài được
+        if not timThayServer then
+            if data.nextPageCursor then
+                print(">> Trang này hết server ngon. Chuẩn bị lật sang trang sau...")
+                trangHienTai = data.nextPageCursor -- Lưu mã trang sau
+            else
+                print(">> Đã quét cạn đáy API Roblox. Reset lại từ trang đầu...")
+                trangHienTai = "" 
+                ServerDaThu = {} -- Xóa sổ đen làm lại từ đầu
             end
         end
     end
