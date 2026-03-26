@@ -7,80 +7,77 @@ local PId, JId = game.PlaceId, game.JobId
 -- 1. CẤU HÌNH CỐT LÕI
 -- =========================================================
 local DanhSachBoss = {"StrongestShinobiBoss", "AizenBoss"}
-local delayHop = 3 
+local delayHop = 10 -- Nâng lên 10s để né cái lỗi "Whitelist Error (4/3)" ông vừa gặp
 local ServerDaThu = {}
+local trangHienTai = ""
 
 -- =========================================================
 -- 2. MODULE RADAR
 -- =========================================================
 local function QuetRadarBoss()
-    local thuMucQuai = workspace:FindFirstChild("NPCs") or workspace
+    local folder = workspace:FindFirstChild("NPCs") or workspace
     for _, ten in pairs(DanhSachBoss) do
-        local boss = thuMucQuai:FindFirstChild(ten)
-        if boss and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0 then
-            return boss 
-        end
+        local b = folder:FindFirstChild(ten)
+        if b and b:FindFirstChild("Humanoid") and b.Humanoid.Health > 0 then return b end
     end
     return nil
 end
 
 -- =========================================================
--- 3. MODULE NHẢY SERVER SIÊU TỐC
+-- 3. MODULE NHẢY SERVER SIÊU TỐC (Bản Né Server Full)
 -- =========================================================
 local function DoiServerSieuToc()
+    -- Quét từ server đông nhất xuống để đảm bảo server đó "sống"
     local url = "https://games.roblox.com/v1/games/"..PId.."/servers/Public?sortOrder=Desc&limit=100"
+    if trangHienTai ~= "" then url = url .. "&cursor=" .. trangHienTai end
     
     local success, res = pcall(function() return game:HttpGet(url) end)
     if not success then return end 
 
     local data = HS:JSONDecode(res)
     if data and data.data then
-        local danhSachServerNgon = {} 
+        local danhSachNgon = {} 
         
         for _, srv in pairs(data.data) do
-            if type(srv) == "table" and srv.id ~= JId and not ServerDaThu[srv.id] and srv.playing < (srv.maxPlayers - 1) then
-                table.insert(danhSachServerNgon, srv)
+            -- LOGIC MỚI: Chỉ nhảy vào server trống ít nhất 3 slot (maxPlayers - 3)
+            -- Điều này giúp né việc 2-3 người cùng nhảy vào 1 lúc gây kẹt cửa
+            if type(srv) == "table" and srv.id ~= JId and not ServerDaThu[srv.id] and srv.playing < (srv.maxPlayers - 3) then
+                table.insert(danhSachNgon, srv)
             end
         end
         
-        if #danhSachServerNgon > 0 then
-            local serverChot = danhSachServerNgon[math.random(1, #danhSachServerNgon)]
+        if #danhSachNgon > 0 then
+            -- BỐC NGẪU NHIÊN: Tuyệt chiêu né đụng hàng với tụi script khác
+            local chot = danhSachNgon[math.random(1, #danhSachNgon)]
             
-            print(">> [Bơm Ga] Chốt ngẫu nhiên server " .. serverChot.playing .. "/" .. serverChot.maxPlayers .. ". Teleport ngay!")
-            ServerDaThu[serverChot.id] = true
-            TS:TeleportToPlaceInstance(PId, serverChot.id, Player)
+            print(">> [Bơm Ga] Chốt phòng ngẫu nhiên: " .. chot.playing .. "/" .. chot.maxPlayers)
+            ServerDaThu[chot.id] = true
+            TS:TeleportToPlaceInstance(PId, chot.id, Player)
             task.wait(3) 
         else
-            print(">> 100 Server đầu đều nát. Đợi nhịp sau lấy danh sách mới...")
-            ServerDaThu = {} 
+            -- Nếu 100 server trang này đều quá đông, tự động lật trang tìm tiếp
+            trangHienTai = data.nextPageCursor or ""
+            if trangHienTai == "" then ServerDaThu = {} end
+            print(">> Toàn phòng đông, đang rà soát trang tiếp theo...")
         end
     end
 end
 
 -- =========================================================
--- 4. VÒNG LẶP THỰC THI (TRÁI TIM)
+-- 4. VÒNG LẶP THỰC THI
 -- =========================================================
 task.spawn(function()
-    print(">> KÍCH HOẠT HỆ THỐNG AUTO BOSS HOP...")
-    
-    while true do
-        task.wait(1) 
-        local bossMucTieu = QuetRadarBoss()
-        
-        if bossMucTieu then
-            print(">> [BÁO ĐỘNG] Bắt được: " .. bossMucTieu.Name .. " - KHÓA MỤC TIÊU!")
-            
-            repeat
-                task.wait(0.5) 
-                -- Đợi chèn hàm Bay và hàm Đánh vào đây
-                
-            until not bossMucTieu or not bossMucTieu.Parent or not bossMucTieu:FindFirstChild("Humanoid") or bossMucTieu.Humanoid.Health <= 0
-            
-            print(">> Boss đã bị tiêu diệt hoặc biến mất. Khởi động lại Radar...")
+    print(">> HE THONG BAT DAU...")
+    while task.wait(1) do
+        local target = QuetRadarBoss()
+        if target then
+            print(">> Muc tieu: " .. target.Name)
+            repeat task.wait(0.5) until not target or not target.Parent or not target:FindFirstChild("Humanoid") or target.Humanoid.Health <= 0
+            print(">> Boss bay mau. Dang quet lai...")
         else
-            print(">> Trắng tay. Đợi " .. delayHop .. "s rồi té sang Server khác...")
+            print(">> Trắng tay. Đợi " .. delayHop .. "s rồi nhảy...")
             task.wait(delayHop)
-            DoiServerSieuToc() -- GỌI ĐÚNG HÀM MỚI Ở ĐÂY
+            DoiServerSieuToc()
         end
     end
 end)
