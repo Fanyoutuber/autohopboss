@@ -6,7 +6,7 @@ local HttpService = game:GetService("HttpService")
 -- =========================================================
 -- Nhét tất cả tên Boss ông muốn săn vào đây. Ưu tiên con nào thì để lên đầu.
 local DanhSachBoss = {"StrongestShinobiBoss", "AizenBoss"}
-local delayHop = 2 -- Mức an toàn chống bị Roblox ban IP
+local delayHop = 1 -- Mức an toàn chống bị Roblox ban IP
 
 -- =========================================================
 -- 2. MODULE RADAR ĐA MỤC TIÊU
@@ -93,18 +93,22 @@ task.spawn(function()
         
         local bossMucTieu = QuetRadarBoss()
         
-        if bossMucTieu then
-            print(">> [BÁO ĐỘNG] Phát hiện mục tiêu: " .. bossMucTieu.Name .. " - HỦY LỆNH HOP!")
-            
-            -- ĐÂY LÀ ĐIỂM CHỜ:
-            -- Sau này ông lôi cái hàm ModuleDiChuyen.BayToi(bossMucTieu.HumanoidRootPart) ráp vào đây
-            -- Và gọi hàm AutoAttack() ở ngay dưới nó
-            
-            break -- Đập vỡ vòng lặp Hop, giữ nhân vật đứng lại server này để đấm Boss
-        else
-            print(">> Trắng tay. Đợi " .. delayHop .. "s rồi té sang Server khác...")
-            task.wait(delayHop)
-            DoiServer()
+       if bossMucTieu then
+    print(">> [BÁO ĐỘNG] Bắt được: " .. bossMucTieu.Name .. " - KHÓA MỤC TIÊU!")
+    
+    -- LỒNG GIAM: Ép script đứng ở đây chừng nào Boss còn sống
+    repeat
+        task.wait(0.5) -- Trễ nửa giây mỗi nhịp chém
+        
+        -- Sau này ông ném lệnh Bay và lệnh Đấm (RemoteEvent) vào ngay dòng này
+        -- ModuleDiChuyen.BayToi(bossMucTieu.HumanoidRootPart)
+        -- AutoAttack()
+        
+    until not bossMucTieu or not bossMucTieu.Parent or not bossMucTieu:FindFirstChild("Humanoid") or bossMucTieu.Humanoid.Health <= 0
+    
+    print(">> Boss đã bị tiêu diệt hoặc biến mất. Khởi động lại Radar...")
+    -- Hết lồng giam, script tự động quay lên đầu vòng lặp while true.
+    -- Vòng sau quét không thấy Boss -> Tự động rơi xuống vế else -> Kích hoạt DoiServer()
         end
     end
 end)
