@@ -11,7 +11,7 @@ local PId, JId = game.PlaceId, game.JobId
 
 -- CONFIG
 local DanhSachBoss = {"StrongestShinobiBoss", "AizenBoss"}
-local delayHop = 2 -- Tang len 15s de chac chan session cu da dong
+local delayHop = 10 -- Tang len 15s de chac chan session cu da dong
 local ServerDaThu = {}
 
 -- =========================================================
