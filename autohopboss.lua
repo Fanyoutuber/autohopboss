@@ -7,7 +7,7 @@ local PId, JId = game.PlaceId, game.JobId
 -- 1. CẤU HÌNH CỐT LÕI
 -- =========================================================
 local DanhSachBoss = {"StrongestShinobiBoss", "AizenBoss"}
-local delayHop = 5 -- Bắt buộc để 5s trở lên
+local delayHop = 2 -- Bắt buộc để 5s trở lên
 
 -- =========================================================
 -- 2. BIẾN HỆ THỐNG HOP
