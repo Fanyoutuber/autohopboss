@@ -6,7 +6,7 @@ local HttpService = game:GetService("HttpService")
 -- =========================================================
 -- Nhét tất cả tên Boss ông muốn săn vào đây. Ưu tiên con nào thì để lên đầu.
 local DanhSachBoss = {"StrongestShinobiBoss", "AizenBoss", "JinwooBoss", "JinwooBoss"}
-local delayHop = 5 -- Mức an toàn chống bị Roblox ban IP
+local delayHop = 1 -- Mức an toàn chống bị Roblox ban IP
 
 -- =========================================================
 -- 2. MODULE RADAR ĐA MỤC TIÊU
