@@ -1,5 +1,5 @@
 print(">> Giai doan 1: Khoi tao...")
-task.wait(5)
+task.wait(7)
 local TS, HS = game:GetService("TeleportService"), game:GetService("HttpService")
 local Player, PId, JId = game.Players.LocalPlayer, game.PlaceId, game.JobId
 local DanhSachBoss, delayHop, ServerDaThu = {"StrongestShinobiBoss", "AizenBoss"}, 3, {}
@@ -52,7 +52,7 @@ local function DoiServerSieuToc()
                     break -- Văng ra ngoài đợi 10s sau quét lại từ đầu
                 end
                 print(">> Trang nay Full het, dang lat trang...")
-                task.wait(0.2) 
+                task.wait(0.5) 
             end
         end
     end
