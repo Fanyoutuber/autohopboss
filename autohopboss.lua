@@ -84,31 +84,30 @@ end
 -- =========================================================
 -- 4. TRÁI TIM KỊCH BẢN (Vòng lặp thực thi)
 -- =========================================================
--- Dùng task.spawn để tách luồng, Delta không bị treo cứng khi chạy vòng lặp vô hạn
 task.spawn(function()
     print(">> KÍCH HOẠT HỆ THỐNG AUTO BOSS HOP...")
     
     while true do
-        task.wait(1) -- Trễ 1 giây mỗi vòng để CPU không bốc khói
+        task.wait(1) 
         
         local bossMucTieu = QuetRadarBoss()
         
-       if bossMucTieu then
-    print(">> [BÁO ĐỘNG] Bắt được: " .. bossMucTieu.Name .. " - KHÓA MỤC TIÊU!")
-    
-    -- LỒNG GIAM: Ép script đứng ở đây chừng nào Boss còn sống
-    repeat
-        task.wait(0.5) -- Trễ nửa giây mỗi nhịp chém
-        
-        -- Sau này ông ném lệnh Bay và lệnh Đấm (RemoteEvent) vào ngay dòng này
-        -- ModuleDiChuyen.BayToi(bossMucTieu.HumanoidRootPart)
-        -- AutoAttack()
-        
-    until not bossMucTieu or not bossMucTieu.Parent or not bossMucTieu:FindFirstChild("Humanoid") or bossMucTieu.Humanoid.Health <= 0
-    
-    print(">> Boss đã bị tiêu diệt hoặc biến mất. Khởi động lại Radar...")
-    -- Hết lồng giam, script tự động quay lên đầu vòng lặp while true.
-    -- Vòng sau quét không thấy Boss -> Tự động rơi xuống vế else -> Kích hoạt DoiServer()
+        if bossMucTieu then
+            print(">> [BÁO ĐỘNG] Bắt được: " .. bossMucTieu.Name .. " - KHÓA MỤC TIÊU!")
+            
+            repeat
+                task.wait(0.5) 
+                -- Nơi để ráp hàm Bay và hàm Đánh vào
+                
+            until not bossMucTieu or not bossMucTieu.Parent or not bossMucTieu:FindFirstChild("Humanoid") or bossMucTieu.Humanoid.Health <= 0
+            
+            print(">> Boss đã bị tiêu diệt hoặc biến mất. Khởi động lại Radar...")
+            
+        else
+            -- ĐÂY LÀ CÁI VẾ ÔNG LÀM RỚT MẤT KHI COPY
+            print(">> Trắng tay. Đợi " .. delayHop .. "s rồi té sang Server khác...")
+            task.wait(delayHop)
+            DoiServer()
         end
     end
 end)
