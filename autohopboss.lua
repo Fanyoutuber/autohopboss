@@ -1,82 +1,57 @@
--- =========================================================
--- GIAI ĐOẠN 1: KHỞI TẠO BIẾN (Đợi 3s để ổn định session)
--- =========================================================
-print(">> Giai doan 1: Dang khoi tao he thong... doi 3s")
+print(">> Giai doan 1: Khoi tao...")
 task.wait(3)
+local TS, HS = game:GetService("TeleportService"), game:GetService("HttpService")
+local Player, PId, JId = game.Players.LocalPlayer, game.PlaceId, game.JobId
+local DanhSachBoss, delayHop, ServerDaThu = {"StrongestShinobiBoss", "AizenBoss"}, 3, {}
 
-local TS = game:GetService("TeleportService")
-local HS = game:GetService("HttpService")
-local Player = game.Players.LocalPlayer
-local PId, JId = game.PlaceId, game.JobId
-
--- CONFIG
-local DanhSachBoss = {"StrongestShinobiBoss", "AizenBoss"}
-local delayHop = 10 -- Tang len 15s de chac chan session cu da dong
-local ServerDaThu = {}
-
--- =========================================================
--- GIAI ĐOẠN 2: THIẾT LẬP RADAR (Đợi thêm 2s)
--- =========================================================
-task.wait(2)
-print(">> Giai doan 2: Dang nap Module Radar...")
-
+print(">> Giai doan 2: Nap Radar...")
+task.wait(1)
 local function QuetRadarBoss()
     local folder = workspace:FindFirstChild("NPCs") or workspace
     for _, ten in pairs(DanhSachBoss) do
         local b = folder:FindFirstChild(ten)
         if b and b:FindFirstChild("Humanoid") and b.Humanoid.Health > 0 then return b end
     end
-    return nil
 end
 
--- =========================================================
--- GIAI ĐOẠN 3: THIẾT LẬP SERVER HOP (Đợi thêm 2s)
--- =========================================================
-task.wait(2)
-print(">> Giai doan 3: Dang nap Module Teleport...")
-
+print(">> Giai doan 3: Nap Teleport...")
+task.wait(1)
 local function DoiServerSieuToc()
-    local url = "https://games.roblox.com/v1/games/"..PId.."/servers/Public?sortOrder=Desc&limit=100"
+    local url = "https://games.roblox.com/v1/games/"..PId.."/servers/Public?sortOrder=Asc&limit=100"
     local success, res = pcall(function() return game:HttpGet(url) end)
-    if not success then 
-        print(">> [LỖI API] Roblox chặn truy cập vì spam. Đợi nhịp sau gọi lại...")
-        return 
-    end
+    if not success then return print(">> [LỖI API] Bi chan, doi nhip sau...") end
+    
     local data = HS:JSONDecode(res)
     if data and data.data then
         local danhSachNgon = {} 
         for _, srv in pairs(data.data) do
-            if type(srv) == "table" and srv.id ~= JId and not ServerDaThu[srv.id] and srv.playing < (srv.maxPlayers - 3) then
+            if type(srv) == "table" and srv.id ~= JId and not ServerDaThu[srv.id] and srv.playing >= 3 and srv.playing < (srv.maxPlayers - 2) then
                 table.insert(danhSachNgon, srv)
             end
         end
         
         if #danhSachNgon > 0 then
             local chot = danhSachNgon[math.random(1, #danhSachNgon)]
-            print(">> [Bơm Ga] Chốt phong: " .. chot.playing .. "/" .. chot.maxPlayers)
+            print(">> Chot phong: " .. chot.playing .. "/" .. chot.maxPlayers)
             ServerDaThu[chot.id] = true
             TS:TeleportToPlaceInstance(PId, chot.id, Player)
-            task.wait(5) -- Doi lenh teleport on dinh
+            task.wait(5)
         else
+            print(">> [CANH BAO] Quet xit. Reset danh sach...")
             ServerDaThu = {} 
         end
     end
 end
 
--- =========================================================
--- GIAI ĐOẠN 4: KÍCH HOẠT VÒNG LẶP (Chốt hạ)
--- =========================================================
-task.wait(2)
-print(">> Giai doan cuoi: Kich hoat vong lap farm!")
-
+print(">> Giai doan 4: Kich hoat Farm!")
+task.wait(1)
 task.spawn(function()
-    while true do
-        task.wait(1) 
+    while task.wait(1) do
         local target = QuetRadarBoss()
         if target then
             print(">> Muc tieu: " .. target.Name)
             repeat task.wait(0.5) until not target or not target.Parent or not target:FindFirstChild("Humanoid") or target.Humanoid.Health <= 0
-            print(">> Boss chet. Dang tim muc tieu tiep theo...")
+            print(">> Boss chet, tim tiep...")
         else
             print(">> Map sach. Doi " .. delayHop .. "s roi Hop...")
             task.wait(delayHop)
