@@ -5,7 +5,7 @@ local HttpService = game:GetService("HttpService")
 -- 1. CẤU HÌNH CỐT LÕI (Chỗ duy nhất ông cần sửa tay)
 -- =========================================================
 -- Nhét tất cả tên Boss ông muốn săn vào đây. Ưu tiên con nào thì để lên đầu.
-local DanhSachBoss = {"StrongestShinobiBoss", "AizenBoss", "JinwooBoss", "JinwooBoss"}
+local DanhSachBoss = {"StrongestShinobiBoss", "AizenBoss", "YamatoBoss", "JinwooBoss"}
 local delayHop = 1 -- Mức an toàn chống bị Roblox ban IP
 
 -- =========================================================
@@ -13,7 +13,7 @@ local delayHop = 1 -- Mức an toàn chống bị Roblox ban IP
 -- =========================================================
 local function QuetRadarBoss()
     -- LỖ HỔNG CHỖ NÀY: Phải thay chữ "Enemies" bằng đúng tên thư mục ông soi được trong Dex
-    local thuMucQuai = workspace:FindFirstChild("Enemies") or workspace
+    local thuMucQuai = workspace:FindFirstChild("NPCs") or workspace
     
     for _, ten in pairs(DanhSachBoss) do
         local boss = thuMucQuai:FindFirstChild(ten)
@@ -36,7 +36,7 @@ local function DoiServer()
     local placeId, jobId = game.PlaceId, game.JobId
     
     -- Gắn thêm cursor để lật trang nếu cần
-    local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Desc&limit=100"
+    local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
     if trangHienTai ~= "" then
         url = url .. "&cursor=" .. trangHienTai
     end
