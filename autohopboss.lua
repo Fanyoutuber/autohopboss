@@ -1,11 +1,15 @@
-local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
+local TS = game:GetService("TeleportService")
+local HS = game:GetService("HttpService")
+local PId, JId = game.PlaceId, game.JobId
+local Player = game.Players.LocalPlayer
 
 -- CONFIG
 local BossList = {"StrongestShinobiBoss", "AizenBoss"}
-local hopDelay = 2 -- Đã nâng lên 5s để né lỗi spam API của Roblox
-local blacklistedServers = {}
-local pageCursor = ""
+local delayHop = 5 -- Mức an toàn chống ban
+
+-- VARIABLES
+local ServerDaThu = {}
+local trangHienTai = ""
 
 -- RADAR
 local function GetBoss()
@@ -18,42 +22,49 @@ local function GetBoss()
     end
 end
 
--- SERVER HOPPER
-local function Hop()
-    local url = "https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"
-    if pageCursor ~= "" then url ..= "&cursor="..pageCursor end
+-- SERVER HOP
+local function DoiServer()
+    local url = "https://games.roblox.com/v1/games/"..PId.."/servers/Public?sortOrder=Asc&limit=100"
+    if trangHienTai ~= "" then url = url.."&cursor="..trangHienTai end
     
-    local s, res = pcall(function() return game:HttpGet(url) end)
-    if not s then return end
-    
-    local data = HttpService:JSONDecode(res)
+    local success, res = pcall(function() return game:HttpGet(url) end)
+    if not success then return end
+
+    local data = HS:JSONDecode(res)
     if data and data.data then
         for _, srv in pairs(data.data) do
-            if srv.id ~= game.JobId and not blacklistedServers[srv.id] and srv.playing >= 3 and srv.playing < 8 then
-                print(">> Sang Server: "..srv.playing.." người")
-                blacklistedServers[srv.id] = true
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, srv.id, game.Players.LocalPlayer)
+            if type(srv) == "table" and srv.id ~= JId and not ServerDaThu[srv.id] and srv.playing >= 3 and srv.playing < 8 then
+                print(">> Chốt server: " .. srv.playing .. " người. Đang Teleport...")
+                ServerDaThu[srv.id] = true
+                TS:TeleportToPlaceInstance(PId, srv.id, Player)
                 task.wait(10)
                 return
             end
         end
-        pageCursor = data.nextPageCursor or ""
+        -- Hết trang hoặc cạn list
+        trangHienTai = data.nextPageCursor or ""
+        if trangHienTai == "" then ServerDaThu = {} end 
     end
 end
 
 -- MAIN LOOP
 task.spawn(function()
-    print(">> HE THONG BAT DAU...")
+    print(">> KÍCH HOẠT HỆ THỐNG AUTO BOSS HOP...")
     while task.wait(1) do
-        local target = GetBoss()
-        if target then
-            print(">> Muc tieu: "..target.Name)
-            repeat task.wait(0.5) until not target or not target.Parent or not target:FindFirstChild("Humanoid") or target.Humanoid.Health <= 0
-            print(">> Boss chet, dang quet lai...")
+        local boss = GetBoss()
+        
+        if boss then
+            print(">> [BÁO ĐỘNG] Bắt được: " .. boss.Name .. " - KHÓA MỤC TIÊU!")
+            repeat 
+                task.wait(0.5) 
+                -- Chỗ nhét hàm Bay và hàm Đánh (RemoteEvent)
+            until not boss or not boss.Parent or not boss:FindFirstChild("Humanoid") or boss.Humanoid.Health <= 0
+            
+            print(">> Boss bay màu. Khởi động lại Radar...")
         else
-            print(">> Khong co boss, dang hop sau "..hopDelay.."s")
-            task.wait(hopDelay)
-            Hop()
+            print(">> Trắng tay. Đợi " .. delayHop .. "s rồi té...")
+            task.wait(delayHop)
+            DoiServer()
         end
     end
 end)
