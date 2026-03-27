@@ -6,7 +6,6 @@ local RunService = game:GetService("RunService")
 local Player, PId, JId = game.Players.LocalPlayer, game.PlaceId, game.JobId
 local Cfg = getgenv().Tai_Config
 local cursor, tenFile = "", "SoDen_Tai.json"
-
 local ServerDaThu = {}
 pcall(function() if isfile(tenFile) then ServerDaThu = HS:JSONDecode(readfile(tenFile)) end end)
 ServerDaThu[JId] = true 
