@@ -1,18 +1,17 @@
 print(">> Giai doan 1: Khoi tao...")
-task.wait(5) -- Giữ nguyên thời gian của ông
+task.wait(5) 
 local TS, HS = game:GetService("TeleportService"), game:GetService("HttpService")
-local TweenService, RS = game:GetService("TweenService"), game:GetService("ReplicatedStorage")
+local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Player, PId, JId = game.Players.LocalPlayer, game.PlaceId, game.JobId
 local Cfg = getgenv().Tai_Config
 local cursor, tenFile = "", "SoDen_Tai.json"
 
--- Trí nhớ Sổ đen
 local ServerDaThu = {}
 pcall(function() if isfile(tenFile) then ServerDaThu = HS:JSONDecode(readfile(tenFile)) end end)
 ServerDaThu[JId] = true 
 
--- [VÁ LỖI 1] HỆ THỐNG NOCLIP ĐỘC LẬP (ÉP XUYÊN ĐẢO)
+-- HỆ THỐNG NOCLIP ĐỘC LẬP
 local NoclipConnection
 local function BatNoclip()
     if NoclipConnection then NoclipConnection:Disconnect() end
@@ -31,7 +30,7 @@ local function TatNoclip()
 end
 
 print(">> Giai doan 2: Nap Radar...")
-task.wait(0.5) -- Giữ nguyên thời gian của ông
+task.wait(0.5)
 local function QuetRadarBoss()
     local folder = workspace:FindFirstChild("NPCs") or workspace
     for _, ten in pairs(Cfg.DanhSachBoss) do
@@ -41,7 +40,7 @@ local function QuetRadarBoss()
 end
 
 print(">> Giai doan 3: Nap Teleport...")
-task.wait(0.5) -- Giữ nguyên thời gian của ông
+task.wait(0.5)
 local function DoiServerSieuToc()
     while true do 
         local url = "https://games.roblox.com/v1/games/"..PId.."/servers/Public?sortOrder=Desc&limit=100"
@@ -80,25 +79,32 @@ local function DoiServerSieuToc()
     end
 end
 
--- [CẬP NHẬT] ÉP LOAD MAP KHI Ở QUÁ XA
+-- MODULE BAY BẰNG LERP CFRAME (KHÔNG XÀI TWEEN)
 local function BayToi(DichDen)
     local char = Player.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
     local HRP = char.HumanoidRootPart
     local KhoangCach = (HRP.Position - DichDen.Position).Magnitude
     
-    if KhoangCach > 1500 then
-        HRP.CFrame = DichDen * CFrame.new(0, 300, 0)
+    -- Xử lý khác đảo: Bay tức thời lên không trung 500 stud để ép load map
+    if KhoangCach > 2000 then
+        HRP.CFrame = DichDen * CFrame.new(0, 500, 0)
+        -- Hãm phanh triệt để, chống rớt tự do vỡ đầu cắn dame
+        HRP.Velocity = Vector3.new(0, 0, 0) 
         task.wait(0.5) 
         return
     end
 
-    local ThoiGian = KhoangCach / 350 
-    TweenService:Create(HRP, TweenInfo.new(ThoiGian, Enum.EasingStyle.Linear), {CFrame = DichDen}):Play()
+    -- Lướt mượt bằng Lerp dựa trên tốc độ vòng lặp (Ép tốc 350 stud/s)
+    local BuocNhay = 350 / KhoangCach * Cfg.TocDoSpamChieu
+    if BuocNhay > 1 then BuocNhay = 1 end -- Chống văng xuyên vũ trụ nếu đứng quá gần
+    
+    HRP.CFrame = HRP.CFrame:Lerp(DichDen, BuocNhay)
+    HRP.Velocity = Vector3.new(0, 0, 0) -- Giữ nhân vật lơ lửng không bị rớt
 end
 
 print(">> Giai doan 4: Kich hoat Farm!")
-task.wait(0.5) -- Giữ nguyên thời gian của ông
+task.wait(0.5)
 task.spawn(function()
     local Combat = RS:FindFirstChild("CombatSystem") and RS.CombatSystem.Remotes.RequestHit
     local Ability = RS:FindFirstChild("AbilitySystem") and RS.AbilitySystem.Remotes.RequestAbility
@@ -115,18 +121,18 @@ task.spawn(function()
                 local khoangCachToiBoss = 9999
                 
                 if char and target:FindFirstChild("HumanoidRootPart") then
+                    -- Lấy tọa độ dưới gầm đất boss
                     local viTriAnToan = target.HumanoidRootPart.CFrame * CFrame.new(0, Cfg.KhoangCachBay, 0)
                     khoangCachToiBoss = (char.HumanoidRootPart.Position - viTriAnToan.Position).Magnitude
                     BayToi(viTriAnToan)
                 end
                 
-                -- [CẬP NHẬT] COMBO LÁCH LUẬT GCD
+                -- CHỈ BẮN CHIÊU KHI ĐÃ ÁP SÁT (< 30 STUD)
                 if khoangCachToiBoss < 30 then
                     pcall(function()
                         if Ability and type(Cfg.CacChieuSuDung) == "table" then
                             for _, idChieu in pairs(Cfg.CacChieuSuDung) do
                                 Ability:FireServer(idChieu)
-                                -- Gọi biến Delay từ Config. Nếu Config cũ chưa có thì mặc định lấy 0.6s để chống lỗi
                                 task.wait(Cfg.DelayGiuaCacChieu or 0.6) 
                             end
                         end
@@ -134,6 +140,7 @@ task.spawn(function()
                     end)
                 end
                 
+                -- Thời gian lặp chính (quyết định độ mượt của màn lướt)
                 task.wait(Cfg.TocDoSpamChieu) 
                 
             until not target or not target.Parent or not target:FindFirstChild("Humanoid") or target.Humanoid.Health <= 0
