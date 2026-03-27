@@ -20,7 +20,7 @@ task.wait(2)
 local function DoiServerSieuToc()
     while true do 
         -- Dùng Desc lấy server sống, lật trang liên tục nếu Full
-        local url = "https://games.roblox.com/v1/games/"..PId.."/servers/Public?sortOrder=Desc&limit=100"
+        local url = "https://games.roblox.com/v1/games/"..PId.."/servers/Public?sortOrder=Asc&limit=100"
         if cursor ~= "" then url = url .. "&cursor=" .. cursor end
         
         local success, res = pcall(function() return game:HttpGet(url) end)
