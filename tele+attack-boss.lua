@@ -32,7 +32,7 @@ end
 local function LấyMụcTiêu()
     -- LỖ HỔNG Ở ĐÂY: Hiện tại đang quét toàn bộ workspace. 
     -- Nếu biết thư mục chứa quái, hãy đổi thành: workspace.ThuMucQuai:GetChildren()
-    for _, obj in pairs(workspace:WaitForChild("NPCs"):FindFirstChild()) do 
+    for _, obj in pairs(workspace:WaitForChild("NPCs"):GetChildren()) do 
         if obj.Name == TARGET_NAME and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
             if obj.Humanoid.Health > 0 then
                 return obj -- Trả về con quái còn sống đầu tiên tìm thấy
