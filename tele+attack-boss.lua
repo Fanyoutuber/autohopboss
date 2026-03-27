@@ -9,7 +9,7 @@ local rootPart = character:WaitForChild("HumanoidRootPart")
 -- =========================================
 -- KHU VỰC CÀI ĐẶT (Tùy chỉnh linh hoạt ở đây)
 -- =========================================
-local TARGET_NAME = "Tên_Con_Boss_Vào_Đây" -- Đổi tên quái muốn farm
+local TARGET_NAME = "YamatoBoss" -- Đổi tên quái muốn farm
 local FLY_SPEED = 150 
 local DISTANCE = 4 -- Đứng cách lưng boss 4 stud
 
