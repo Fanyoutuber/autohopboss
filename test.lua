@@ -1,83 +1,124 @@
--- =========================================================
--- GIAI ĐOẠN 1: KHỞI TẠO BIẾN (Đợi 3s để ổn định session)
--- =========================================================
-print(">> Giai doan 1: Dang khoi tao he thong... doi 3s")
-task.wait(3)
+print(">> Giai doan 1: Khoi tao...")
+task.wait(3) 
+local TS, HS = game:GetService("TeleportService"), game:GetService("HttpService")
+local TweenService, RS = game:GetService("TweenService"), game:GetService("ReplicatedStorage")
+local Player, PId, JId = game.Players.LocalPlayer, game.PlaceId, game.JobId
+local Cfg = getgenv().Tai_Config
+local cursor, tenFile = "", "SoDen_Tai.json"
 
-local TS = game:GetService("TeleportService")
-local HS = game:GetService("HttpService")
-local Player = game.Players.LocalPlayer
-local PId, JId = game.PlaceId, game.JobId
+-- Event Manager
+getgenv().ActiveConnections = getgenv().ActiveConnections or {}
+local function RegisterEvent(signal, name, callback, noPcall)
+    if ActiveConnections[name] then ActiveConnections[name]:Disconnect(); ActiveConnections[name] = nil end
+    if noPcall then
+        ActiveConnections[name] = signal:Connect(callback)
+    else
+        ActiveConnections[name] = signal:Connect(function(...)
+            local success, err = pcall(callback, ...)
+            if not success then warn("[Event Error] " .. name .. ": " .. tostring(err)) end
+        end)
+    end
+end
 
--- CONFIG
-local DanhSachBoss = {"StrongestShinobiBoss", "AizenBoss"}
-local delayHop = 2 -- Tang len 15s de chac chan session cu da dong
+-- Trí nhớ Sổ đen
 local ServerDaThu = {}
+pcall(function() if isfile(tenFile) then ServerDaThu = HS:JSONDecode(readfile(tenFile)) end end)
+ServerDaThu[JId] = true 
 
--- =========================================================
--- GIAI ĐOẠN 2: THIẾT LẬP RADAR (Đợi thêm 2s)
--- =========================================================
+print(">> Giai doan 2: Nap Radar...")
 task.wait(2)
-print(">> Giai doan 2: Dang nap Module Radar...")
-
 local function QuetRadarBoss()
     local folder = workspace:FindFirstChild("NPCs") or workspace
-    for _, ten in pairs(DanhSachBoss) do
+    for _, ten in pairs(Cfg.DanhSachBoss) do
         local b = folder:FindFirstChild(ten)
         if b and b:FindFirstChild("Humanoid") and b.Humanoid.Health > 0 then return b end
     end
-    return nil
 end
 
--- =========================================================
--- GIAI ĐOẠN 3: THIẾT LẬP SERVER HOP (Đợi thêm 2s)
--- =========================================================
+print(">> Giai doan 3: Nap Teleport...")
 task.wait(2)
-print(">> Giai doan 3: Dang nap Module Teleport...")
-
 local function DoiServerSieuToc()
-    local url = "https://games.roblox.com/v1/games/"..PId.."/servers/Public?sortOrder=Desc&limit=100"
-    local success, res = pcall(function() return game:HttpGet(url) end)
-    if not success then return end 
-
-    local data = HS:JSONDecode(res)
-    if data and data.data then
-        local danhSachNgon = {} 
-        for _, srv in pairs(data.data) do
-            if type(srv) == "table" and srv.id ~= JId and not ServerDaThu[srv.id] and srv.playing < (srv.maxPlayers - 3) then
-                table.insert(danhSachNgon, srv)
-            end
-        end
+    while true do 
+        local url = "https://games.roblox.com/v1/games/"..PId.."/servers/Public?sortOrder=Desc&limit=100"
+        if cursor ~= "" then url = url .. "&cursor=" .. cursor end
         
-        if #danhSachNgon > 0 then
-            local chot = danhSachNgon[math.random(1, #danhSachNgon)]
-            print(">> [Bơm Ga] Chốt phong: " .. chot.playing .. "/" .. chot.maxPlayers)
-            ServerDaThu[chot.id] = true
-            TS:TeleportToPlaceInstance(PId, chot.id, Player)
-            task.wait(5) -- Doi lenh teleport on dinh
-        else
-            ServerDaThu = {} 
+        local success, res = pcall(function() return game:HttpGet(url) end)
+        if not success then return print(">> [LỖI API] Doi nhip sau...") end
+        
+        local data = HS:JSONDecode(res)
+        if data and data.data then
+            local danhSachNgon = {} 
+            for _, srv in pairs(data.data) do
+                if type(srv) == "table" and srv.id ~= JId and not ServerDaThu[srv.id] and srv.playing < (srv.maxPlayers - 2) then
+                    table.insert(danhSachNgon, srv)
+                end
+            end
+            
+            if #danhSachNgon > 0 then
+                local chot = danhSachNgon[math.random(1, #danhSachNgon)]
+                print(">> Chot phong: " .. chot.playing .. "/" .. chot.maxPlayers)
+                ServerDaThu[chot.id] = true
+                pcall(function() writefile(tenFile, HS:JSONEncode(ServerDaThu)) end)
+                TS:TeleportToPlaceInstance(PId, chot.id, Player)
+                task.wait(10)
+                return 
+            else
+                cursor = data.nextPageCursor or ""
+                if cursor == "" then
+                    ServerDaThu = {} 
+                    pcall(function() delfile(tenFile) end) 
+                    break 
+                end
+                task.wait(0.2) 
+            end
         end
     end
 end
 
--- =========================================================
--- GIAI ĐOẠN 4: KÍCH HOẠT VÒNG LẶP (Chốt hạ)
--- =========================================================
-task.wait(2)
-print(">> Giai doan cuoi: Kich hoat vong lap farm!")
+local function BayToi(DichDen)
+    local char = Player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local HRP = char.HumanoidRootPart
+    local ThoiGian = (HRP.Position - DichDen.Position).Magnitude / 300
+    TweenService:Create(HRP, TweenInfo.new(ThoiGian, Enum.EasingStyle.Linear), {CFrame = DichDen}):Play()
+end
 
+print(">> Giai doan 4: Kich hoat Farm!")
+task.wait(2)
 task.spawn(function()
-    while true do
-        task.wait(1) 
+    local Combat = RS:FindFirstChild("CombatSystem") and RS.CombatSystem.Remotes.RequestHit
+    local Ability = RS:FindFirstChild("AbilitySystem") and RS.AbilitySystem.Remotes.RequestAbility
+
+    while task.wait(1) do
         local target = QuetRadarBoss()
+        
         if target then
             print(">> Muc tieu: " .. target.Name)
-            repeat task.wait(0.5) until not target or not target.Parent or not target:FindFirstChild("Humanoid") or target.Humanoid.Health <= 0
-            print(">> Boss chet. Dang tim muc tieu tiep theo...")
+            repeat 
+                task.wait(Cfg.TocDoSpamChieu) 
+                local char = Player.Character
+                if char and target:FindFirstChild("HumanoidRootPart") then
+                    BayToi(target.HumanoidRootPart.CFrame * CFrame.new(0, Cfg.KhoangCachBay, 0))
+                end
+                
+                pcall(function()
+                    -- Bắn đòn đánh thường
+                    if Combat then Combat:FireServer() end
+                    
+                    -- Quét mảng để bắn các chiêu được chỉ định
+                    if Ability and type(Cfg.CacChieuSuDung) == "table" then
+                        for _, idChieu in pairs(Cfg.CacChieuSuDung) do
+                            Ability:FireServer(idChieu)
+                        end
+                    end
+                end)
+                
+            until not target or not target.Parent or not target:FindFirstChild("Humanoid") or target.Humanoid.Health <= 0
+            
+            print(">> Boss chet, tim tiep...")
         else
-            print(">> Map sach. Doi " .. delayHop .. "s roi Hop...")
-            task.wait(delayHop)
+            print(">> Map sach. Doi " .. Cfg.ThoiGianChoHop .. "s roi Hop...")
+            task.wait(Cfg.ThoiGianChoHop)
             DoiServerSieuToc()
         end
     end
