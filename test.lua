@@ -1,6 +1,3 @@
--- =========================================================
--- 🛑 LÕI HỆ THỐNG (BẢN VÁ LỖI NOCLIP, BAY XA & GLOBAL COOLDOWN)
--- =========================================================
 print(">> Giai doan 1: Khoi tao...")
 task.wait(5) -- Giữ nguyên thời gian của ông
 local TS, HS = game:GetService("TeleportService"), game:GetService("HttpService")
