@@ -1,5 +1,5 @@
 print(">> Giai doan 1: Khoi tao...")
-task.wait(3) 
+task.wait(10) 
 local TS, HS = game:GetService("TeleportService"), game:GetService("HttpService")
 local TweenService, RS = game:GetService("TweenService"), game:GetService("ReplicatedStorage")
 local Player, PId, JId = game.Players.LocalPlayer, game.PlaceId, game.JobId
