@@ -2,7 +2,7 @@
 -- 🛑 LÕI HỆ THỐNG (BẢN VÁ LỖI NOCLIP & TỐI ƯU COMBO SKILL)
 -- =========================================================
 print(">> Giai doan 1: Khoi tao...")
-task.wait(15) 
+task.wait(5) 
 local TS, HS = game:GetService("TeleportService"), game:GetService("HttpService")
 local TweenService, RS = game:GetService("TweenService"), game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -34,7 +34,7 @@ local function TatNoclip()
 end
 
 print(">> Giai doan 2: Nap Radar...")
-task.wait(2)
+task.wait(0.5)
 local function QuetRadarBoss()
     local folder = workspace:FindFirstChild("NPCs") or workspace
     for _, ten in pairs(Cfg.DanhSachBoss) do
@@ -44,7 +44,7 @@ local function QuetRadarBoss()
 end
 
 print(">> Giai doan 3: Nap Teleport...")
-task.wait(2)
+task.wait(0.5)
 local function DoiServerSieuToc()
     while true do 
         local url = "https://games.roblox.com/v1/games/"..PId.."/servers/Public?sortOrder=Desc&limit=100"
@@ -68,7 +68,7 @@ local function DoiServerSieuToc()
                 ServerDaThu[chot.id] = true
                 pcall(function() writefile(tenFile, HS:JSONEncode(ServerDaThu)) end)
                 TS:TeleportToPlaceInstance(PId, chot.id, Player)
-                task.wait(10)
+                task.wait(5)
                 return 
             else
                 cursor = data.nextPageCursor or ""
@@ -92,7 +92,7 @@ local function BayToi(DichDen)
 end
 
 print(">> Giai doan 4: Kich hoat Farm!")
-task.wait(2)
+task.wait(0.5)
 task.spawn(function()
     local Combat = RS:FindFirstChild("CombatSystem") and RS.CombatSystem.Remotes.RequestHit
     local Ability = RS:FindFirstChild("AbilitySystem") and RS.AbilitySystem.Remotes.RequestAbility
