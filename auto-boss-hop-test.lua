@@ -86,66 +86,87 @@ local function DoiServerSieuToc()
     end
 end
 
--- 4. HÀM BAY TỚI BOSS (Gọi Khoảng cách & Tốc độ từ Config)
--- 4. HÀM BAY TỚI BOSS (Đã vá lỗi nhận diện Boss)
+-- 4. HÀM BAY TỚI BOSS (Xử lý mượt StreamingEnabled)
 local function BayToi(target)
     local character = Player.Character or Player.CharacterAdded:Wait()
     local rootPart = character:WaitForChild("HumanoidRootPart", 5)
     
     if not rootPart or not target then return false end
 
-    -- Bổ sung bộ dò tìm dự phòng: Lấy 1 trong 3 cục làm mốc
-    -- Ưu tiên bốc thẳng cái Torso ra trước, không có mới mò tới HumanoidRootPart
-    local bossRoot = target:FindFirstChild("Torso") or target:FindFirstChild("HumanoidRootPart")
-    
-    if not bossRoot then 
-        print(">> [LỖI]: Boss " .. target.Name .. " bị thiếu lõi vật lý (Torso/HRP)!")
-        return false 
-    end
-
-    local targetCFrame = bossRoot.CFrame * CFrame.new(0, 0, Cfg.KhoangCachBay) 
-    local distance = (rootPart.Position - targetCFrame.Position).Magnitude
+    -- Bước 1: Bay tới tọa độ ảo (Pivot) của model để ép game nạp dữ liệu
+    local toaDoAo = target:GetPivot() * CFrame.new(0, 0, Cfg.KhoangCachBay)
+    local distance = (rootPart.Position - toaDoAo.Position).Magnitude
     
     if distance > 10 then
         local tweenInfo = TweenInfo.new(distance / Cfg.TocDoBay, Enum.EasingStyle.Linear) 
-        local tween = TweenService:Create(rootPart, tweenInfo, {CFrame = targetCFrame})
+        local tween = TweenService:Create(rootPart, tweenInfo, {CFrame = toaDoAo})
         tween:Play()
-        tween.Completed:Wait() 
+        tween.Completed:Wait() -- Chờ bay tới vùng biển chứa Boss
     else
-        rootPart.CFrame = targetCFrame
+        rootPart.CFrame = toaDoAo
     end
+
+    -- Bước 2: Tới nơi rồi, đứng đợi game load cái lõi vật lý ra
+    local thoiGianCho = 0
+    local bossRoot = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Torso")
+    
+    while not bossRoot and thoiGianCho < 5 do -- Chờ tối đa 5 giây cho chắc cú
+        task.wait(0.5)
+        thoiGianCho = thoiGianCho + 0.5
+        bossRoot = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Torso")
+    end
+
+    -- Đợi 5 giây mà mạng lag vẫn chưa load được xác thì báo lỗi, chuyển con khác
+    if not bossRoot then 
+        print(">> [LỖI] Đã tới nơi nhưng game lag không load được thể xác Boss!")
+        return false 
+    end
+    
     return true
 end
-
--- 5. HÀM BÁM LƯNG VÀ TẤN CÔNG (Đã đồng bộ với hàm Bay)
+-- 5. HÀM BÁM LƯNG VÀ TẤN CÔNG (Lối đánh Cối Xay Gió)
 local function DanhBoss(target)
     local Combat = RS:FindFirstChild("CombatSystem") and RS.CombatSystem.Remotes.RequestHit
     local Ability = RS:FindFirstChild("AbilitySystem") and RS.AbilitySystem.Remotes.RequestAbility
     
     while target and target.Parent and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 do
         local character = Player.Character
-        local bossRoot = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Torso") or target:FindFirstChild("UpperTorso")
+        local bossRoot = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Torso")
         
+        -- Đang đánh mà bay màu thì văng ra hồi sinh
         if not character or not character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Humanoid").Health <= 0 then
             break 
         end
+        if not bossRoot then break end
         
-        -- Nếu boss mất xác đột ngột thì văng ra để tìm con mới
-        if not bossRoot then break end 
-        
-        character.HumanoidRootPart.CFrame = bossRoot.CFrame * CFrame.new(0, 0, Cfg.KhoangCachBay)
-        
-        pcall(function()
-            if Ability and type(Cfg.CacChieuSuDung) == "table" then
-                for _, idChieu in pairs(Cfg.CacChieuSuDung) do
-                    Ability:FireServer(idChieu)
-                    task.wait(Cfg.DelayGiuaCacChieu) 
+        -- Nếu có danh sách chiêu thì chơi kiểu xoay vòng
+        if Ability and type(Cfg.CacChieuSuDung) == "table" and #Cfg.CacChieuSuDung > 0 then
+            for _, idChieu in ipairs(Cfg.CacChieuSuDung) do
+                -- Phải kiểm tra lại xác Boss và xác mình trước mỗi nhịp vung tay (lỡ chết giữa combo)
+                if not target:FindFirstChild("Humanoid") or target.Humanoid.Health <= 0 then break end
+                if not Player.Character or Player.Character:FindFirstChild("Humanoid").Health <= 0 then break end
+                
+                -- Khóa tọa độ liên tục theo thời gian thực lỡ Boss lướt đi
+                bossRoot = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Torso")
+                if bossRoot then
+                    Player.Character.HumanoidRootPart.CFrame = bossRoot.CFrame * CFrame.new(0, 0, Cfg.KhoangCachBay)
                 end
+                
+                -- Bơm Combo: Xả chiêu xong nhồi ngay 1 cú chém thường
+                pcall(function()
+                    Ability:FireServer(idChieu)
+                    if Combat then Combat:FireServer() end
+                end)
+                
+                -- Khựng lại 1 nhịp (0.5s) để game load đồ họa sát thương
+                task.wait(Cfg.NhipDanh) 
             end
-            if Combat then Combat:FireServer() end
-        end)
-        
-        task.wait(Cfg.TocDoDanh) 
+        else
+            -- Nếu ông xóa hết chiêu trong bảng Config, nó sẽ tự lùi về chế độ chỉ chém thường
+            character.HumanoidRootPart.CFrame = bossRoot.CFrame * CFrame.new(0, 0, Cfg.KhoangCachBay)
+            pcall(function() if Combat then Combat:FireServer() end end)
+            task.wait(Cfg.TocDoDanh)
+        end
     end
 end
 -- =========================================
