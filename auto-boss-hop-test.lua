@@ -87,13 +87,23 @@ local function DoiServerSieuToc()
 end
 
 -- 4. HÀM BAY TỚI BOSS (Gọi Khoảng cách & Tốc độ từ Config)
+-- 4. HÀM BAY TỚI BOSS (Đã vá lỗi nhận diện Boss)
 local function BayToi(target)
     local character = Player.Character or Player.CharacterAdded:Wait()
     local rootPart = character:WaitForChild("HumanoidRootPart", 5)
     
-    if not rootPart or not target or not target:FindFirstChild("HumanoidRootPart") then return false end
+    if not rootPart or not target then return false end
 
-    local targetCFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, Cfg.KhoangCachBay) 
+    -- Bổ sung bộ dò tìm dự phòng: Lấy 1 trong 3 cục làm mốc
+    -- Ưu tiên bốc thẳng cái Torso ra trước, không có mới mò tới HumanoidRootPart
+    local bossRoot = target:FindFirstChild("Torso") or target:FindFirstChild("HumanoidRootPart")
+    
+    if not bossRoot then 
+        print(">> [LỖI]: Boss " .. target.Name .. " bị thiếu lõi vật lý (Torso/HRP)!")
+        return false 
+    end
+
+    local targetCFrame = bossRoot.CFrame * CFrame.new(0, 0, Cfg.KhoangCachBay) 
     local distance = (rootPart.Position - targetCFrame.Position).Magnitude
     
     if distance > 10 then
@@ -107,40 +117,37 @@ local function BayToi(target)
     return true
 end
 
--- 5. HÀM BÁM LƯNG VÀ TẤN CÔNG (Gọi Khoảng cách & Delay đánh từ Config)
+-- 5. HÀM BÁM LƯNG VÀ TẤN CÔNG (Đã đồng bộ với hàm Bay)
 local function DanhBoss(target)
-    -- Bắt cả 2 đường dẫn: Đánh thường và Chiêu thức
     local Combat = RS:FindFirstChild("CombatSystem") and RS.CombatSystem.Remotes.RequestHit
     local Ability = RS:FindFirstChild("AbilitySystem") and RS.AbilitySystem.Remotes.RequestAbility
     
     while target and target.Parent and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 do
         local character = Player.Character
+        local bossRoot = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Torso") or target:FindFirstChild("UpperTorso")
         
-        -- Chết thì văng ra để hồi sinh
         if not character or not character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Humanoid").Health <= 0 then
             break 
         end
         
-        -- Khóa tọa độ dính chặt sau lưng boss
-        character.HumanoidRootPart.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, Cfg.KhoangCachBay)
+        -- Nếu boss mất xác đột ngột thì văng ra để tìm con mới
+        if not bossRoot then break end 
+        
+        character.HumanoidRootPart.CFrame = bossRoot.CFrame * CFrame.new(0, 0, Cfg.KhoangCachBay)
         
         pcall(function()
-            -- XẢ CHIÊU THỨC TRƯỚC
             if Ability and type(Cfg.CacChieuSuDung) == "table" then
                 for _, idChieu in pairs(Cfg.CacChieuSuDung) do
                     Ability:FireServer(idChieu)
-                    task.wait(Cfg.DelayGiuaCacChieu) -- Khựng lại một nhịp nhỏ để gói tin đi lọt
+                    task.wait(Cfg.DelayGiuaCacChieu) 
                 end
             end
-            
-            -- BỒI ĐÒN ĐÁNH THƯỜNG
             if Combat then Combat:FireServer() end
         end)
         
         task.wait(Cfg.TocDoDanh) 
     end
 end
-
 -- =========================================
 -- VÒNG LẶP AUTO FARM CHÍNH
 -- =========================================
