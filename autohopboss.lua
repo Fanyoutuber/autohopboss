@@ -2,7 +2,7 @@ print(">> Giai doan 1: Khoi tao...")
 task.wait(10)
 local TS, HS = game:GetService("TeleportService"), game:GetService("HttpService")
 local Player, PId, JId = game.Players.LocalPlayer, game.PlaceId, game.JobId
-local DanhSachBoss, delayHop, ServerDaThu = {"StrongestShinobiBoss", "AizenBoss"}, 3, {}
+local DanhSachBoss, delayHop, ServerDaThu = {"StrongestShinobiBoss"}, 3, {}
 local cursor = "" -- Thêm biến lật trang
 
 print(">> Giai doan 2: Nap Radar...")
